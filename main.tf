@@ -1,10 +1,25 @@
 provider "aws" {
-  region = "us-east-1"
+  region  = "us-east-1"
+  shared_credentials_files = ["/home/ubuntu/.aws/credentials"]
 }
-
 
 resource "aws_vpc" "main_vpc" {
   cidr_block = "10.0.0.0/16"
+}
+
+# Create Internet Gateway
+resource "aws_internet_gateway" "my_igw" {
+  vpc_id = aws_vpc.main_vpc.id
+}
+
+# Create Route Table
+resource "aws_route_table" "my_route_table" {
+  vpc_id = aws_vpc.main_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.my_igw.id
+  }
 }
 
 # Subnet creation
@@ -84,12 +99,24 @@ resource "aws_efs_mount_target" "efs_mount" {
   security_groups = [aws_security_group.ec2_sg.id]
 }
 
+#Generate an SSH key pair
+resource "tls_private_key" "ec2_key_pair" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+# create key
+
+resource "aws_key_pair" "milind_key_pair" {
+  key_name   = "my-key"
+  public_key = tls_private_key.ec2_key_pair.public_key_openssh
+}
+
 # EC2 Instance creation
 resource "aws_instance" "ec2_instance" {
-  ami           = "ami-0c55b159cbfafe1f0"  # Amazon Linux 2, change as necessary
+  ami           ="ami-0ebfd941bbafe70c6"
   instance_type = "t2.micro"
 
-  key_name = var.key_name
+  key_name = aws_key_pair.milind_key_pair.key_name
 
   subnet_id              = aws_subnet.main_subnet.id
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]

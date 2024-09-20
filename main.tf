@@ -46,11 +46,27 @@ data "aws_eip" "netspi_eip" {
 resource "aws_s3_bucket" "netspi_bucket" {
   bucket = "netspi-efs-bucket-assignment"
 
-  acl    = "private"
+  #acl    = "private"
 
   tags = {
     Name = "NetSPI_EFS_Bucket"
   }
+}
+
+# aws_s3_bucket_ownership_controls Provides a resource to manage S3 Bucket Ownership Controls
+resource "aws_s3_bucket_ownership_controls" "netspi_bucket_ownership" {
+  bucket = aws_s3_bucket.netspi_bucket.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+# acl for s3 bucket
+resource "aws_s3_bucket_acl" "netspi_bucket_acl" {
+  depends_on = [aws_s3_bucket_ownership_controls.netspi_bucket_ownership]
+
+  bucket = aws_s3_bucket.netspi_bucket.id
+  acl    = "private"
 }
 
 # EFS creation with tag

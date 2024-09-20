@@ -113,6 +113,7 @@ resource "aws_key_pair" "milind_key_pair" {
 
 # EC2 Instance creation
 resource "aws_instance" "ec2_instance" {
+  name          = var.instance_name
   ami           ="ami-0ebfd941bbafe70c6"
   instance_type = "t2.micro"
 
